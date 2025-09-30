@@ -1,0 +1,24 @@
+.git
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+
+# بيئات افتراضية
+.venv/
+venv/
+env/
+backend/.venv/
+
+# ملفات محلية
+.env
+.env.*
+
+# أدوات محرر
+.vscode/
+.idea/
+
+# مخارج بناء
+dist/
+build/
