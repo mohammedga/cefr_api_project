@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CEFR Stories • API-enabled Minimal Demo</title>
+</head>
+<body>
+  <h1>Stories (from API)</h1>
+  <button id="load">Load from API</button>
+  <pre id="out"></pre>
+<script>
+const API_BASE = 'http://127.0.0.1:5000/api';
+
+document.getElementById('load').onclick = async () => {
+  const r = await fetch(API_BASE + '/stories');
+  const data = await r.json();
+  document.getElementById('out').textContent = JSON.stringify(data, null, 2);
+};
+</script>
+</body>
+</html>

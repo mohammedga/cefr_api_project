@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CEFR Stories • Modal Auth + Story Builder</title>
+  <style>
+    :root{
+      --bg:#0b1020;--panel:#121a2e;--card:#101728;--ink:#e6edf3;--muted:#9fb0c3;--acc:#6aa9ff;--ok:#59e19b;--danger:#ff7a7a;--border:rgba(255,255,255,.08)
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;background:radial-gradient(1200px 600px at 10% -10%,#1a2442 0%,transparent 60%),
+                 radial-gradient(900px 600px at 110% 10%,#1a2442 0%,transparent 60%),var(--bg);
+         color:var(--ink);font:16px/1.6 system-ui,Segoe UI,Roboto,Helvetica,Arial}
+    a{color:inherit}
+    .app{display:grid;grid-template-columns:280px 1fr;min-height:100vh}
+    .side{background-color: #131625;border-right:1px solid var(--border);padding:18px 16px}
+    .brand{display:flex;gap:10px;align-items:center;font-weight:800}
+    .logo{width:36px;height:36px;display:grid;place-items:center;border-radius:10px;background:linear-gradient(135deg,#5c8cff,#4cf3c0);color:#0a1030}
+    .panel{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:12px;margin-top:14px}
+    .levels{display:flex;gap:8px;flex-wrap:wrap}
+    .chip{display:inline-flex;align-items:center;gap:8px;padding:11px 26px;border:1px solid var(--border);border-radius:999px;background:#939cb3;cursor:pointer;margin-left: 23px;}
+    .chip.active{outline:2px solid #294f94}
+    .search{display:flex;gap:8px;margin-top:8px}
+    .search input,.btn{padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:#0c1630;color:var(--ink)}
+    .btn{cursor:pointer}
+    .btn.primary{background:linear-gradient(135deg,#3568ff,#27df9a);color:#0b1020;font-weight:800}
+    .pill{font-size:11px;border:1px solid var(--border);border-radius:999px;padding:2px 8px;color:var(--muted)}
+    .content{padding:24px ; background-color: #131625}
+    .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;display:flex;flex-direction:column}
+    .thumb{height:130px;position:relative;background:linear-gradient(135deg,#1a2750,#11203d);}
+    .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+    .badge{position:absolute;top:10px;left:10px;background:#0f172a;border:1px solid var(--border);padding:4px 8px;border-radius:999px;font-size:12px}
+    .prog{position:absolute;right:10px;top:10px;font-size:12px;color:#0b1020;background:linear-gradient(135deg,#c8ff8c,#6aa9ff);padding:4px 8px;border-radius:999px;font-weight:700}
+    .body{padding:14px 14px 10px}
+    .meta{font-size:12px;color:var(--muted)}
+    .actions{display:flex;gap:8px;padding:12px;border-top:1px solid var(--border)}
+    .story{max-width:980px;margin:0 auto}
+    .story h2{margin:0 0 6px}
+    .tools{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 18px;align-items:center}
+    .page{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px}
+    .story p{margin:0 0 12px}
+    .hl{background:rgba(200,255,140,.2);padding:1px 4px;border-radius:6px}
+    .split{display:grid;grid-template-columns:1fr 340px;gap:16px}
+    @media(max-width:980px){.app{grid-template-columns:1fr}.split{grid-template-columns:1fr}}
+    .gloss{border:1px dashed var(--border);border-radius:12px;padding:12px}
+    .gloss h4{margin:0 0 8px}
+    .gloss ul{margin:0;padding-left:18px}
+    .qcard{border:1px solid var(--border);border-radius:12px;padding:12px;margin:10px 0;background:#0e162b}
+    .option{display:flex;gap:8px;align-items:flex-start;padding:8px;border-radius:10px;cursor:pointer;border:1px solid transparent}
+    .option.correct{border-color:rgba(89,225,155,.6)} .option.wrong{border-color:rgba(255,122,122,.6)}
+    .score{font-weight:800;color:var(--ok)}
+    .toggle{appearance:none;width:40px;height:24px;background:#25324b;border-radius:999px;border:1px solid var(--border);position:relative;cursor:pointer}
+    .toggle:checked{background:#2a5fbe}
+    .toggle:before{content:"";position:absolute;width:18px;height:18px;left:3px;top:50%;transform:translateY(-50%);background:#fff;border-radius:50%;transition:all .2s}
+    .toggle:checked:before{left:19px}
+    .btn.full{width:100%}
+    .quiz .qfooter{position:sticky;bottom:0;background:var(--panel);border-top:1px solid var(--border);padding:10px;border-radius:12px;margin-top:8px;z-index:2}
+    @media(max-width:680px){.content{padding:12px}.side{padding:12px}.panel{padding:10px}.btn{min-height:44px}.option{padding:12px}.actions .btn{flex:1}}
+    .modal{position:fixed;inset:0;background:rgba(2,6,23,.6);display:none;align-items:center;justify-content:center;padding:16px;z-index:50}
+    .modal.open{display:flex}
+    .dialog{width:min(680px,96vw);max-height:92vh;overflow:auto;background:linear-gradient(180deg,#0e1730,#0c1428);border:1px solid var(--border);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+    .dialog header{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border)}
+    .dialog header h3{margin:0}
+    .dialog .inner{padding:14px 16px;display:grid;gap:12px}
+    .dialog .row{display:grid;gap:6px}
+    .dialog input,.dialog textarea,.dialog select{padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:#0c1630;color:var(--ink)}
+    .dialog textarea{min-height:90px}
+    .dialog .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    @media(max-width:560px){.dialog .grid2{grid-template-columns:1fr}}
+    .dialog footer{display:flex;gap:8px;justify-content:flex-end;padding:12px 16px;border-top:1px solid var(--border)}
+    .danger{color:#ffb1b1}
+    .preview{border:1px dashed var(--border);border-radius:12px;padding:8px;display:grid;place-items:center}
+    .preview img{max-width:100%;border-radius:12px}
+    .qitem{border:1px solid var(--border);border-radius:12px;padding:10px;margin-bottom:8px}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="side">
+      <div class="brand"><div class="logo">AE</div><div>CEFR Stories<br><span class="meta">Learn by reading</span></div></div>
+      <div class="panel">
+        <div class="meta">Levels</div>
+        <div id="levelFilters" class="levels"></div>
+      </div>
+      <div class="panel">
+        <div class="meta">Search & tools</div>
+        <div class="search">
+          <input id="searchBox" placeholder="Search title or words…" />
+          <button class="btn" id="clearBtn">✕</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="btn" id="sortBtn">Sort by length</button>
+          <button class="btn" id="resetBtn">Reset</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div class="meta">Settings</div>
+          <span class="pill" id="progressStat">0% done</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
+          <label class="meta">Show Arabic</label>
+          <input id="arabicToggle" class="toggle" type="checkbox" />
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
+          <label class="meta">Auto‑read (TTS)</label>
+          <input id="ttsToggle" class="toggle" type="checkbox" />
+        </div>
+      </div>
+      <p class="meta" style="font-size:12px">Progress, vocabulary, and settings are saved per account in your browser.</p>
+    </aside>
+
+    <main class="content">
+      <div class="toolbar">
+        <button class="btn primary" id="allStoriesBtn">All stories</button>
+        <span class="meta">Double‑click a word to highlight and add it to your Vocabulary.</span>
+        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+          <span class="pill" id="userBadge">guest</span>
+          <button class="btn" id="loginBtn">Login</button>
+          <button class="btn" id="registerBtn">Register</button>
+          <button class="btn" id="logoutBtn" style="display:none">Logout</button>
+          <button class="btn" id="adminAddBtn" style="display:none">Add Story (Admin)</button>
+        </div>
+      </div>
+
+      <div id="listView" class="grid" role="list"></div>
+      <div id="storyView" class="story" style="display:none"></div>
+    </main>
+  </div>
+
+  <!-- Auth Modal (NO admin key field) -->
+  <div id="authModal" class="modal" aria-hidden="true">
+    <div class="dialog" role="dialog" aria-modal="true">
+      <header>
+        <h3 id="authTitle">Sign in</h3>
+        <button class="btn" id="authClose">✕</button>
+      </header>
+      <div class="inner">
+        <div class="row"><label>Username</label><input id="authUser" autocomplete="username"></div>
+        <div class="row"><label>Password</label><input id="authPass" type="password" autocomplete="current-password"></div>
+        <div class="row"><span class="danger" id="authMsg"></span></div>
+      </div>
+      <footer>
+        <button class="btn" id="authSwitch">Create an account</button>
+        <button class="btn primary" id="authSubmit">Continue</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Story Builder Modal (Admin) -->
+  <div id="storyModal" class="modal" aria-hidden="true">
+    <div class="dialog" role="dialog" aria-modal="true">
+      <header>
+        <h3>Add a new story</h3>
+        <button class="btn" id="storyClose">✕</button>
+      </header>
+      <div class="inner">
+        <div class="grid2">
+          <div class="row"><label>Title</label><input id="sbTitle" placeholder="Story title"></div>
+          <div class="row"><label>Level</label>
+            <select id="sbLevel">
+              <option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option><option>C2</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="row"><label>Minutes</label><input id="sbMinutes" type="number" min="1" value="3"></div>
+          <div class="row"><label>Thumbnail image</label>
+            <input id="sbImg" type="file" accept="image/*">
+            <div class="preview" id="sbImgPreview"><span class="meta">No image selected</span></div>
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="row"><label>English text (paragraphs separated by blank line)</label><textarea id="sbTextEn" placeholder="Paragraph 1&#10;&#10;Paragraph 2"></textarea></div>
+          <div class="row"><label>Arabic text (paragraphs separated by blank line)</label><textarea id="sbTextAr" placeholder="فقرة 1&#10;&#10;فقرة 2"></textarea></div>
+        </div>
+        <div class="row"><label>Vocabulary (one per line, format: word = ترجمة)</label><textarea id="sbVocab" placeholder="map = خريطة&#10;storm = عاصفة"></textarea></div>
+        <div class="row">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <label>Quiz questions</label>
+            <button class="btn" id="addQ">+ Add question</button>
+          </div>
+          <div id="quizBuilder"></div>
+        </div>
+        <div class="row"><span class="danger" id="storyMsg"></span></div>
+      </div>
+      <footer>
+        <button class="btn" id="storyReset">Reset</button>
+        <button class="btn primary" id="storySave">Save story</button>
+      </footer>
+    </div>
+  </div>
+
+<script>
+/* ===== API autodetect ===== */
+const API_CANDIDATES = ["/api", "", "http://127.0.0.1:5000/api", "http://127.0.0.1:5000"];
+let API_BASE = null;
+async function detectApiBase(){
+  for (const base of API_CANDIDATES){
+    try{ const r = await fetch(base + "/stories", {method:"GET"}); if(r.ok){ API_BASE = base; return; } }catch(e){}
+  }
+  API_BASE = null;
+}
+
+/* ===== API helpers ===== */
+async function apiList(){ if(!API_BASE) return []; try{ const r = await fetch(API_BASE + "/stories"); if(!r.ok) throw 0; return await r.json(); }catch(e){ return []; } }
+async function apiCreate(story){ if(!API_BASE) throw new Error("No API"); const r = await fetch(API_BASE + "/stories",{method:"POST",headers:{ "Content-Type":"application/json" },body:JSON.stringify(story)}); if(!r.ok) throw new Error("Create failed"); return await r.json(); }
+async function apiUpdate(id, story){ const r = await fetch(API_BASE + "/stories/"+id,{method:"PUT",headers:{ "Content-Type":"application/json" },body:JSON.stringify(story)}); if(!r.ok) throw new Error("Update failed"); return await r.json(); }
+async function apiDelete(id){ const r = await fetch(API_BASE + "/stories/"+id,{method:"DELETE"}); if(!r.ok) throw new Error("Delete failed"); return await r.json(); }
+
+/* ===== Data & State ===== */
+let STORIES = [];
+const state = {
+  levels:['A1','A2','B1','B2','C1','C2'],
+  selectedLevels:new Set(['A1','A2','B1','B2','C1','C2']),
+  search:'', sortByLength:false,
+  settings:{
+    showArabic:JSON.parse(localStorage.getItem('ae_show_ar')||'false'),
+    autoTTS:JSON.parse(localStorage.getItem('ae_auto_tts')||'false'),
+    voiceRate: parseFloat(localStorage.getItem('ae_voice_rate')||'1.0')
+  },
+  user: JSON.parse(localStorage.getItem('ae_user_current')||'{"username":"guest","role":"guest"}'),
+  progress:{}, vocab:{},
+  authMode:'login'
+};
+const $=(s,r=document)=>r.querySelector(s); const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const wordsCount = s=>s.split(/\\s+/).filter(Boolean).length; const storyLength = st=>st.text.map(wordsCount).reduce((a,b)=>a+b,0);
+function storageKey(name){const u=state.user?.username||'guest';return `${name}_${u}`}
+function loadUserScoped(){state.progress=JSON.parse(localStorage.getItem(storageKey('ae_progress'))||'{}');state.vocab=JSON.parse(localStorage.getItem(storageKey('ae_vocab'))||'{}')}
+function saveProgress(){localStorage.setItem(storageKey('ae_progress'),JSON.stringify(state.progress));updateProgressStat()}
+function saveVocab(){localStorage.setItem(storageKey('ae_vocab'),JSON.stringify(state.vocab))}
+function saveSettings(){localStorage.setItem('ae_show_ar',JSON.stringify(state.settings.showArabic));localStorage.setItem('ae_auto_tts',JSON.stringify(state.settings.autoTTS));localStorage.setItem('ae_voice_rate',String(state.settings.voiceRate||1.0))}
+function updateProgressStat(){const total=STORIES.length;const done=Object.values(state.progress).filter(p=>p&&p.done).length;$('#progressStat').textContent=Math.round((done/(total||1))*100)+'% done'}
+function isAdmin(){return state.user?.role==='admin'}
+function slugify(s){return s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40)}
+
+/* ===== UI: levels & list ===== */
+function renderLevelFilters(){
+  const wrap = document.getElementById('levelFilters'); wrap.innerHTML='';
+  const makeChip=(label,isActive,onClick)=>{const b=document.createElement('button');b.type='button';b.className='chip'+(isActive?' active':'');b.textContent=label;b.onclick=onClick;return b;};
+  state.levels.forEach(l=>{const isActive=(state.selectedLevels.size===1&&state.selectedLevels.has(l));wrap.appendChild(makeChip(l,isActive,()=>{state.selectedLevels=new Set([l]);renderLevelFilters();showList();}))});
+}
+function filteredStories(){let items=STORIES.filter(st=>state.selectedLevels.has(st.level));if(state.search){const q=state.search.toLowerCase();items=items.filter(st=>st.title.toLowerCase().includes(q)||st.text.join(' ').toLowerCase().includes(q))}if(state.sortByLength){items=items.slice().sort((a,b)=>storyLength(a)-storyLength(b))}return items}
+function showList(){$('#storyView').style.display='none';const list=$('#listView');list.style.display='grid';list.innerHTML='';filteredStories().forEach(st=>{const len=storyLength(st);const card=document.createElement('article');card.className='card';const done=state.progress[st.id]?.done;const score=state.progress[st.id]?.score;const hasImg=!!st.img;card.innerHTML=`<div class="thumb">${hasImg?`<img src="${st.img}" alt="${st.title}">`:''}<span class="badge">Level ${st.level}</span><span class="prog">${done?`✔ ${score??0}/`+st.quiz.length:'~ '+st.minutes+' min'}</span></div><div class="body"><div class="title">${st.title}</div><div class="meta">~${len} words • ${st.minutes} min read</div></div><div class="actions"><button class="btn" data-act="read">Read</button><button class="btn" data-act="quiz">Quiz</button><button class="btn" data-act="listen">Listen</button>${isAdmin()?'<button class="btn" data-act="edit">Edit</button><button class="btn" data-act="delete">Delete</button>':''}</div>`;card.addEventListener('click',async e=>{const act=e.target.closest('button')?.dataset.act;if(!act){openStory(st.id);return}if(act==='read')openStory(st.id);if(act==='quiz')openStory(st.id,{goQuiz:true});if(act==='listen')speakStory(st);if(act==='edit'&&isAdmin())editUserStory(st.id);if(act==='delete'&&isAdmin()){if(confirm('Delete this story?')){try{await apiDelete(st.id);await refreshFromApi();}catch(err){alert('Delete failed');}}}});list.appendChild(card)});updateProgressStat()}
+
+/* ===== Story view & Vocabulary ===== */
+function renderVocabList(st){const base=(st.vocab||[]).map(([en,ar])=>({en,ar,custom:false}));const extra=(state.vocab[st.id]||[]);const merged=[...base];extra.forEach(it=>{if(!merged.some(x=>x.en.toLowerCase()===it.en.toLowerCase()))merged.push(it)});const vlist=$('#vocabList');vlist.innerHTML='';merged.forEach(item=>{const li=document.createElement('li');li.innerHTML=`${item.en} → <span class="meta">${item.ar||'(add Arabic…)'}<\/span> ${item.custom?'<span class="pill">custom</span>':''}`;li.style.cursor='pointer';li.title='Click to edit Arabic meaning';li.addEventListener('click',()=>{const val=prompt(`Arabic meaning for: ${item.en}`,item.ar||'');if(val!==null){const list=state.vocab[st.id]||[];const i=list.findIndex(x=>x.en.toLowerCase()===item.en.toLowerCase());if(i>=0){list[i].ar=val.trim()}else{list.push({en:item.en,ar:val.trim(),custom:true})}state.vocab[st.id]=list;saveVocab();renderVocabList(st)}});li.addEventListener('contextmenu',e=>{e.preventDefault();if(!item.custom)return;if(confirm(`Remove "${item.en}" from your vocabulary?`)){const list=state.vocab[st.id]||[];state.vocab[st.id]=list.filter(x=>x.en.toLowerCase()!==item.en.toLowerCase());saveVocab();renderVocabList(st)}});vlist.appendChild(li)})}
+function openStory(id,opts={}){const st=STORIES.find(s=>String(s.id)===String(id));if(!st)return;$('#listView').style.display='none';const wrap=$('#storyView');wrap.style.display='block';const len=storyLength(st);wrap.innerHTML=`<div class="split"><div><h2>${st.title}</h2><div class="meta">Level ${st.level} • ~${len} words • ${st.minutes} min</div><div class="tools"><button class="btn" id="backBtn">← Back</button><button class="btn" id="listenBtn">▶ Listen</button><button class="btn" id="stopBtn">■ Stop</button><label class="meta" style="display:flex;align-items:center;gap:6px">Speed <select id="rateSelect"><option value="0">0</option><option value="0.5">0.5</option><option value="0.75">0.75</option><option value="1.25">1.25</option><option value="1.5">1.5</option></select></label><span class="pill" id="rateVal"></span><button class="btn" id="toggleArBtn">${state.settings.showArabic?'Hide':'Show'} Arabic</button><button class="btn" id="startQuizBtn">Start Quiz (${st.quiz.length})</button></div><div class="page" id="pageArea"></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px"><span class="meta">Tip: Double‑click a word to highlight & add to Vocabulary (right‑click to remove custom).</span><label class="meta" style="display:flex;align-items:center;gap:6px">Auto‑read <input id="autoTTSInline" type="checkbox" class="toggle" ${state.settings.autoTTS?'checked':''}></label></div></div><aside><div class="gloss"><h4>Vocabulary</h4><ul id="vocabList"></ul></div><div class="quiz" id="quizArea"></div></aside></div>`;
+ const page=$('#pageArea');st.text.forEach((p,i)=>{const para=document.createElement('p');para.innerHTML=p;page.appendChild(para);const ar=document.createElement('p');ar.className='meta';ar.style.display=state.settings.showArabic?'block':'none';ar.textContent=st.ar?.[i]||'';page.appendChild(ar)});renderVocabList(st);$('#backBtn').onclick=()=>{stopTTS();showList()};$('#listenBtn').onclick=()=>speakStory(st);$('#stopBtn').onclick=()=>stopTTS();const sel=$('#rateSelect');const rV=$('#rateVal');const allowed=[0,0.5,0.75,1.25,1.5];let cur=(allowed.includes(Number(state.settings.voiceRate))?Number(state.settings.voiceRate):1.25);sel.value=String(cur);rV.textContent=sel.value+'x';sel.onchange=(e)=>{state.settings.voiceRate=parseFloat(e.target.value||'1.25');rV.textContent=e.target.value+'x';saveSettings()};$('#toggleArBtn').onclick=()=>{state.settings.showArabic=!state.settings.showArabic;saveSettings();$$('#pageArea .meta').forEach(p=>p.style.display=state.settings.showArabic?'block':'none');$('#toggleArBtn').textContent=(state.settings.showArabic?'Hide':'Show')+' Arabic'};$('#startQuizBtn').onclick=()=>renderQuiz(st);$('#autoTTSInline').onchange=e=>{state.settings.autoTTS=e.target.checked;saveSettings()};page.addEventListener('dblclick',()=>{const sel=window.getSelection().toString();if(!sel)return;const match=sel.match(/[A-Za-z']+/);if(!match)return;const word=match[0].trim();const re=new RegExp('(\\\\b'+word.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&')+'\\\\b)','gi');page.innerHTML=page.innerHTML.replace(re,'<span class="hl">$1<\\/span>');const list=state.vocab[st.id]||[];if(!list.some(x=>x.en.toLowerCase()===word.toLowerCase())){list.push({en:word,ar:'',custom:true});state.vocab[st.id]=list;saveVocab();renderVocabList(st)}});if(state.settings.autoTTS)speakStory(st);if(opts.goQuiz)renderQuiz(st)}
+
+/* ===== Quiz ===== */
+function renderQuiz(st){const qa=$('#quizArea');qa.innerHTML='';const cards=[];st.quiz.forEach((it,idx)=>{const card=document.createElement('div');card.className='qcard';card.dataset.idx=idx;card.innerHTML='<div style="font-weight:700;margin-bottom:8px">'+(idx+1)+'. '+it.q+'</div>';it.options.forEach((opt,i)=>{const row=document.createElement('label');row.className='option';row.innerHTML='<input type="radio" name="q'+idx+'" data-index="'+i+'" style="margin-top:3px"> <div>'+opt+'</div>';card.appendChild(row)});const status=document.createElement('div');status.className='meta';status.setAttribute('data-role','status');card.appendChild(status);qa.appendChild(card);cards.push(card)});const foot=document.createElement('div');foot.style.marginTop='10px';foot.innerHTML='<div class="score" id="scoreLine">Score: 0 / '+st.quiz.length+'</div>';qa.appendChild(foot);const bar=document.createElement('div');bar.className='qfooter';bar.innerHTML='<button class="btn primary full" id="checkAllBtn">تحقّق من جميع الإجابات</button>';qa.appendChild(bar);document.getElementById('checkAllBtn').onclick=()=>{let score=0;const missing=[];cards.forEach((card,i)=>{const chosen=card.querySelector('input[type=radio]:checked');if(!chosen){missing.push(i)}});if(missing.length){const first=cards[missing[0]];first.scrollIntoView({behavior:'smooth',block:'center'});first.style.outline='2px solid var(--danger)';setTimeout(()=>first.style.outline='',1200);const n=missing.map(i=>i+1).join(', ');document.getElementById('scoreLine').textContent='Please answer all questions → missing: '+n;return}cards.forEach((card,i)=>{const chosen=card.querySelector('input[type=radio]:checked');const chosenIdx=Number(chosen.dataset.index);const rows=[...card.querySelectorAll('.option')];rows.forEach((r,j)=>{const input=r.querySelector('input');input.disabled=true;if(j===st.quiz[i].answer)r.classList.add('correct')});const status=card.querySelector('[data-role=status]');if(chosenIdx===st.quiz[i].answer){status.textContent='صحيح ✓';status.style.color='var(--ok)';score++}else{status.textContent='خطأ ✗';status.style.color='var(--danger)';chosen.closest('.option').classList.add('wrong')}});document.getElementById('scoreLine').textContent='Score: '+score+' / '+st.quiz.length;state.progress[st.id]={done:true,score};saveProgress();const btn=document.getElementById('checkAllBtn');btn.disabled=true;btn.textContent='تم التحقّق'}}
+
+/* ===== TTS ===== */
+let __currentUtter=null;
+function speakStory(st){ if(!('speechSynthesis' in window)){alert('Text‑to‑Speech not supported in this browser.');return} stopTTS(); const rate=(state.settings.voiceRate||1.25); if(rate<=0){ return; } const utter=new SpeechSynthesisUtterance(st.text.join('\\n\\n')); utter.lang='en-US'; utter.rate=rate; __currentUtter=utter; speechSynthesis.speak(utter) }
+function stopTTS(){ try{ window.speechSynthesis.cancel(); }catch(e){} __currentUtter=null }
+
+/* ===== Accounts (NO admin key, fixed admin) ===== */
+function updateAccountUI(){$('#userBadge').textContent=state.user?.username||'guest';const logged=!!state.user&&state.user.username&&state.user.username!=='guest';$('#loginBtn').style.display=logged?'none':'inline-block';$('#registerBtn').style.display=logged?'none':'inline-block';$('#logoutBtn').style.display=logged?'inline-block':'none';$('#adminAddBtn').style.display=isAdmin()?'inline-block':'none'}
+function openAuth(mode='login'){state.authMode=mode;$('#authModal').classList.add('open');$('#authTitle').textContent=mode==='login'?'Sign in':'Create account';$('#authSwitch').textContent=mode==='login'?'Create an account':'I have an account';$('#authMsg').textContent='';$('#authUser').value='';$('#authPass').value='';setTimeout(()=>$('#authUser').focus(),50)}
+function closeAuth(){$('#authModal').classList.remove('open')}
+function handleAuthSubmit(){const u=$('#authUser').value.trim();const p=$('#authPass').value;if(!u||!p){$('#authMsg').textContent='Username & password are required';return}const users=JSON.parse(localStorage.getItem('ae_users')||'{}');const FIXED_ADMIN_USER='admin';const FIXED_ADMIN_PASS='Mah@714273341';if(state.authMode==='login'){if(u===FIXED_ADMIN_USER && p===FIXED_ADMIN_PASS){state.user={username:u,role:'admin'};localStorage.setItem('ae_user_current',JSON.stringify(state.user));loadUserScoped();updateAccountUI();showList();closeAuth();return}if(!users[u]||users[u].pass!==p){$('#authMsg').textContent='Invalid credentials';return}state.user={username:u,role:users[u].role||'user'};localStorage.setItem('ae_user_current',JSON.stringify(state.user));loadUserScoped();updateAccountUI();showList();closeAuth()}else{if(u===FIXED_ADMIN_USER){$('#authMsg').textContent='This username is reserved.';return}if(users[u]){$('#authMsg').textContent='Username already exists';return}let role='user';users[u]={pass:p,role};localStorage.setItem('ae_users',JSON.stringify(users));state.user={username:u,role};localStorage.setItem('ae_user_current',JSON.stringify(state.user));loadUserScoped();updateAccountUI();showList();closeAuth()}}
+
+/* ===== Story Builder (Admin) ===== */
+let sbImgData = null;
+function openStoryBuilder(){if(!isAdmin())return;sbImgData=null;$('#storyMsg').textContent='';$('#sbTitle').value='';$('#sbLevel').value='A1';$('#sbMinutes').value=3;$('#sbTextEn').value='';$('#sbTextAr').value='';$('#sbVocab').value='';$('#quizBuilder').innerHTML='';$('#sbImgPreview').innerHTML='<span class="meta">No image selected</span>';$('#storyModal').classList.add('open')}
+function closeStoryBuilder(){$('#storyModal').classList.remove('open')}
+function addQBlock(prefill=null){const q=document.createElement('div');q.className='qitem';q.innerHTML=`<div class="row"><label>Question</label><input class="q-text" placeholder="Question text"></div><div class="grid2"><div class="row"><label>Option 1</label><input class="q-o1"></div><div class="row"><label>Option 2</label><input class="q-o2"></div></div><div class="grid2"><div class="row"><label>Option 3</label><input class="q-o3"></div><div class="row"><label>Option 4</label><input class="q-o4"></div></div><div class="grid2"><div class="row"><label>Correct answer (1-4)</label><input class="q-ans" type="number" min="1" max="4" value="1"></div><div class="row"><label>&nbsp;</label><button class="btn" type="button">Remove</button></div></div>`;q.querySelector('button').onclick=()=>q.remove();if(prefill){q.querySelector('.q-text').value=prefill.q||'';q.querySelector('.q-o1').value=prefill.options?.[0]||'';q.querySelector('.q-o2').value=prefill.options?.[1]||'';q.querySelector('.q-o3').value=prefill.options?.[2]||'';q.querySelector('.q-o4').value=prefill.options?.[3]||'';q.querySelector('.q-ans').value=(prefill.answer??0)+1}$('#quizBuilder').appendChild(q)}
+function parseStoryFromForm(){const title=$('#sbTitle').value.trim();const level=$('#sbLevel').value;const minutes=parseInt($('#sbMinutes').value||'3',10);const textEn=$('#sbTextEn').value.split(/\\n\\s*\\n/).map(s=>s.trim()).filter(Boolean);const textAr=$('#sbTextAr').value.split(/\\n\\s*\\n/).map(s=>s.trim()).filter(Boolean);const vocabLines=$('#sbVocab').value.split(/\\n/).map(s=>s.trim()).filter(Boolean);if(!title||!textEn.length){throw new Error('Title and English text are required')}const vocab=vocabLines.map(line=>{const m=line.split('=');if(m.length===1)return [m[0].trim(), ''];return [m[0].trim(), m.slice(1).join('=').trim()]});const quiz=[];$$('#quizBuilder .qitem').forEach(q=>{const qtext=q.querySelector('.q-text').value.trim();const o1=q.querySelector('.q-o1').value.trim();const o2=q.querySelector('.q-o2').value.trim();const o3=q.querySelector('.q-o3').value.trim();const o4=q.querySelector('.q-o4').value.trim();const ans=parseInt(q.querySelector('.q-ans').value||'1',10)-1;if(qtext && o1 && o2 && o3 && o4){quiz.push({q:qtext,options:[o1,o2,o3,o4],answer:Math.max(0,Math.min(3,ans))})}});return {title,level,minutes,text:textEn,ar:textAr,img:sbImgData,vocab,quiz}}
+function saveStory(){(async()=>{try{const obj=parseStoryFromForm();await apiCreate(obj);$('#storyMsg').textContent='Saved to server!';await refreshFromApi();setTimeout(closeStoryBuilder,500)}catch(e){$('#storyMsg').textContent=e.message||'Invalid data'}})()}
+
+/* ===== App init ===== */
+function init(){loadUserScoped();renderLevelFilters();$('#searchBox').addEventListener('input',e=>{state.search=e.target.value.trim();showList()});$('#clearBtn').onclick=()=>{$('#searchBox').value='';state.search='';showList()};$('#sortBtn').onclick=()=>{state.sortByLength=!state.sortByLength;showList()};$('#resetBtn').onclick=()=>{state.selectedLevels=new Set(state.levels);state.search='';state.sortByLength=false;$('#searchBox').value='';renderLevelFilters();showList()};$('#allStoriesBtn').onclick=()=>showList();$('#arabicToggle').checked=state.settings.showArabic;$('#ttsToggle').checked=state.settings.autoTTS;$('#arabicToggle').onchange=e=>{state.settings.showArabic=e.target.checked;saveSettings()};$('#ttsToggle').onchange=e=>{state.settings.autoTTS=e.target.checked;saveSettings()};
+  $('#loginBtn').onclick=()=>openAuth('login');
+  $('#registerBtn').onclick=()=>openAuth('register');
+  $('#logoutBtn').onclick=()=>{state.user={username:'guest',role:'guest'};localStorage.setItem('ae_user_current',JSON.stringify(state.user));loadUserScoped();updateAccountUI();showList()};
+  $('#authClose').onclick=closeAuth;$('#authSubmit').onclick=handleAuthSubmit;$('#authSwitch').onclick=()=>openAuth(state.authMode==='login'?'register':'login');
+  $('#adminAddBtn').onclick=openStoryBuilder;$('#storyClose').onclick=closeStoryBuilder;$('#storySave').onclick=saveStory;$('#storyReset').onclick=openStoryBuilder;$('#addQ').onclick=()=>addQBlock();
+  $('#sbImg').addEventListener('change',(e)=>{const f=e.target.files?.[0];if(!f){sbImgData=null;$('#sbImgPreview').innerHTML='<span class="meta">No image selected</span>';return}const r=new FileReader();r.onload=()=>{sbImgData=r.result;$('#sbImgPreview').innerHTML='<img alt="preview">';$('#sbImgPreview img').src=sbImgData};r.readAsDataURL(f)});
+  updateAccountUI();updateProgressStat();
+  detectApiBase().then(refreshFromApi);
+}
+async function refreshFromApi(){STORIES = await apiList(); showList();}
+
+document.addEventListener('DOMContentLoaded',init);
+</script>
+</body>
+</html>
