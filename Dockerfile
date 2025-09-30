@@ -1,18 +1,20 @@
-# Use Python image
+# Dockerfile
 FROM python:3.11-slim
 
-# Set workdir
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PORT=8080
+
 WORKDIR /app
 
-# Copy requirements and install
-COPY backend/requirements.txt /app/backend/requirements.txt
-RUN pip install --no-cache-dir -r /app/backend/requirements.txt
+# تثبيت المتطلبات
+COPY backend/requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
 
-# Copy project files
-COPY . /app
+# نسخ كود الباكенд والواجهة
+COPY backend/ /app/
+COPY frontend/ /app/frontend/
 
-# Expose port
-EXPOSE 5000
-
-# Start the backend app
-CMD ["python", "-m", "backend.app"]
+# تأكد أن التطبيق يستمع على 0.0.0.0:PORT
+EXPOSE 8080
+CMD ["python", "-m", "app"]
